@@ -131,11 +131,24 @@
                 clearMarker();
                 var latlngArray = directionResult.routes[routeIndex].overview_path;
                 for (var i = 0; i< latlngArray.length;i++){
+                    var rotation = null;
+                    if(i==latlngArray.length - 1){
+                        rotation = 0;
+                    }else
+                    {
+                        rotation = google.maps.geometry.spherical.computeHeading(latlngArray[i], latlngArray[i+1])
+      
+                    }
+                    console.log(rotation);
                     var marker = new google.maps.Marker({
                         position: latlngArray[i],
                         icon: {
                             path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                            scale: 3
+                            fillColor: "yellow",
+                            fillOpacity: 0.8,
+                            rotation: rotation,
+                            scale: 3,
+                            strokeColor: "green"
                         },
                     });
                     markerArray[i] = marker;
