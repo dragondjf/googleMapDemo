@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <meta charset="utf-8">
+        <link type="text/css" rel="stylesheet" href="css/style.css">
+        <script src="js/jquery-1.11.0.min.js"></script>
+        <script type="text/javascript"
+            src="http://maps.googleapis.com/maps/api/js?sensor=false">
+        </script>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                var map;
+                initialize(map);
+            });
+            function initialize(map) {
+                var mapOptions = {
+                    center: new google.maps.LatLng(-34.397, 150.644),
+                    zoom: 8,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById("map_canvas"),
+                    mapOptions);
+
+                google.maps.event.addListener(map, 'click', function(event){
+                    var marker = new google.maps.Marker({
+                        position: event.latLng,
+                        map: map,
+                        title: 'Click to zoom'
+                    });
+                    google.maps.event.addListener(marker, 'click', function() {
+                        map.setZoom(11);
+                        map.setCenter(marker.getPosition());
+                    });
+                });
+                // google.maps.event.addListener(map, 'center_changed', function() {
+                //     // 3 seconds after the center of the map has changed, pan back to the
+                //     // marker.
+                //     window.setTimeout(function() {
+                //         map.panTo(marker.getPosition());
+                //     }, 3000);
+                // });
+
+                google.maps.event.addListener(map, 'click', function(event) {
+                    placeMarker(event.latLng);
+
+                    function placeMarker(location) {
+                        var marker = new google.maps.Marker({
+                            position: location,
+                            map: map,
+                        });
+                        var infowindow = new google.maps.InfoWindow({
+                            content: 'Latitude: ' + location.lat() +
+                            '<br>Longitude: ' + location.lng()
+                        });
+                        infowindow.open(map, marker);
+
+                        window.setTimeout(function() {
+                            infowindow.close();
+                        }, 3000);
+
+                        google.maps.event.addListener(marker,'click',function() {
+                            map.setZoom(9);
+                            map.setCenter(marker.getPosition());
+                        });
+                    }
+                });
+
+                google.maps.event.addListener(map, 'mousemove', function(event){
+                    var lat = event.latLng.lat();
+                    var lng = event.latLng.lng();
+                    $("#latlng").html(
+                        "<p>经度：" + lat + "</p>" + 
+                        "<p>纬度：" + lng + "</p>"
+                    );
+                });
+            }
+
+            // function placeMarker(location) {
+            //     var marker = new google.maps.Marker({
+            //         position: location,
+            //         map: map,
+            //     });
+            //     var infowindow = new google.maps.InfoWindow({
+            //         content: 'Latitude: ' + location.lat() +
+            //         '<br>Longitude: ' + location.lng()
+            //     });
+            //     infowindow.open(map, marker);
+
+            //     google.maps.event.addListener(marker,'click',function() {
+            //         map.setZoom(9);
+            //         map.setCenter(marker.getPosition());
+            //     });
+            // }
+
+        </script>
+    </head>
+    <body onload="initialize()">
+        <div>
+            <div id="latlng">
+                <p>经度：</p>
+                <p>纬度：</p>
+            </div>
+            <div id="control"></div>
+        </div>
+        <div id="map_canvas"></div>
+    </body>
+</html>

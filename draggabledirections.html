@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta charset="utf-8">
+    <style type="text/css">
+        html, body{
+            height: 100%;
+            margin: 0px;
+            padding: 0px
+        }
+
+        #map_canvas{
+            float:left;
+            width:65%;
+            height:100%
+        }
+        #detail {
+            float:right;
+            width:35%;
+            height:100%;
+            overflow:auto
+        }
+
+        #control{
+            width:auto;
+            height:200px;
+            padding: 2px;
+        }
+
+        #query{
+            padding: 5px;
+        }
+
+        #routes li:hover{
+            background-color:yellow;
+        }
+
+        #geocode{
+            width:auto;
+            height:100px;
+        }
+
+    </style>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var directionsDisplay;
+            var directionsService = new google.maps.DirectionsService();
+            var map;
+            var directionsresponse;
+            var markerArray = [];
+            var markerindex = 0;
+
+            var oldDirections = [];
+            var currentDirections = null;
+
+            var timer;
+
+            var geocoder = new google.maps.Geocoder();
+
+            function initialize() {
+                var myOptions = {
+                    zoom: 8,
+                    center: new google.maps.LatLng(30.5931426, 114.30528600000002),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                }
+                map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+                directionsDisplay = new google.maps.DirectionsRenderer({
+                    'map': map,
+                    'preserveViewport': true,
+                    'draggable': true
+                });
+                directionsDisplay.setPanel(document.getElementById("directions_panel"));
+                google.maps.event.addListener(directionsDisplay, 'directions_changed',
+                    function() {
+                        if (currentDirections) {
+                            oldDirections.push(currentDirections);
+                            setUndoDisabled(false);
+                        }
+                        currentDirections = directionsDisplay.getDirections();
+                        clearMarker(markerArray);
+                        // moveMarkers(currentDirections, 0);
+                        if(timer){
+                           window.clearInterval(timer);
+                           timer = null;
+                        }
+                        updateRoutes(currentDirections);
+                        updateStartEnd(currentDirections, 0);
+                        console.log(currentDirections);
+                  });
+
+                google.maps.event.addListener(map, 'click', function(event){
+                    var lat = event.latLng.lat();
+                    var lng = event.latLng.lng();
+                    $("#geocode").html(
+                        "<p>鼠标所在位置纬度：" + lat + "</p>" + 
+                        "<p>鼠标所在位置经度：" + lng + "</p>"
+                    );
+                    getAddressByLatLng(event.latLng);
+
+                });
+
+                setUndoDisabled(true);
+                calcRoute();
+            }
+
+            function undo() {
+                currentDirections = null;
+                directionsDisplay.setDirections(oldDirections.pop());
+                if (!oldDirections.length) {
+                    setUndoDisabled(true);
+                }
+            }
+
+            function setUndoDisabled(value) {
+                document.getElementById("undo").disabled = value;
+            }
+
+            function clearMarker(){
+                for (i = 0; i < markerArray.length; i++) {
+                    markerArray[i].setMap(null);
+                }
+                markerArray = [];
+            }
+
+            function moveMarkers(directionResult, routeIndex){
+                markerindex = 0;
+                clearMarker();
+                var latlngArray = directionResult.routes[routeIndex].overview_path;
+                for (var i = 0; i< latlngArray.length;i++){
+                    var marker = new google.maps.Marker({
+                        position: latlngArray[i],
+                        icon: {
+                            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                            scale: 3
+                        },
+                    });
+                    markerArray[i] = marker;
+                }
+                if(timer){
+                   window.clearInterval(timer);
+                   timer = null;
+                }
+                timer = window.setInterval(function() {
+                    if (markerindex > 0 && markerindex <= (latlngArray.length - 1)){
+                        markerArray[markerindex - 1].setMap(null);
+                        if(markerArray[markerindex] != undefined){
+                            markerArray[markerindex].setMap(map);
+                        }
+                    }
+                    else if(markerindex > latlngArray.length - 1){
+                        markerindex = 0;
+                        markerArray[latlngArray.length - 1].setMap(null);
+                        markerArray[markerindex].setMap(map);
+                    }
+                    $("#latlng").html(
+                        "<p>箭头所在纬度：" + latlngArray[markerindex].lat() + "</p>" + 
+                        "<p>箭头所在经度：" + latlngArray[markerindex].lng() + "</p>"
+                    );
+                    markerindex += 1;
+                }, 100);
+            }
+
+            function calcRoute() {
+                var start = document.getElementById('start').value;
+                var end = document.getElementById('end').value;
+                var request = {
+                    origin:start,
+                    destination:end,
+                    travelMode: google.maps.TravelMode.DRIVING,
+                    provideRouteAlternatives: true
+                };
+
+                directionsService.route(request, function(response, status) {
+                    if (status == google.maps.DirectionsStatus.OK) {
+                        directionsDisplay.setDirections(response);
+                        directionsresponse = response;
+                        console.log(response);
+                        // moveMarkers(response, 0);
+                        updateRoutes(response);
+                        map.setZoom(8)
+                    }
+                });
+            }
+
+            function updateRoutes(directionResult){
+                var lenRoutes = directionResult.routes.length;
+                $("#routes ul").html("");
+                for (var i = 0; i < lenRoutes; i++){
+                    summary = directionResult.routes[i].summary;
+                    distance = directionResult.routes[i].legs[0].distance.text;
+                    duration = directionResult.routes[i].legs[0].duration.text;
+                    text = summary + " " + distance + "-" + duration;
+                    $("#routes ul").append("<li id=" + i + ">" + "<a href='#'>" + text + "</a></li>");
+                }
+                $("#routes ul li").click(function(event) {
+                    i = parseInt(this.id);
+                    directionsDisplay.setRouteIndex(i);
+                    currentDirections = directionsDisplay.getDirections();
+                    moveMarkers(currentDirections, i);
+                });
+            }
+
+            function updateStartEnd(directionResult, i){
+                $("#start").attr('value', directionResult.routes[i].legs[0].start_address);
+                $("#end").attr('value', directionResult.routes[i].legs[0].end_address);
+            }
+
+            $("#query").click(function(event) {
+                calcRoute();
+                if(timer){
+                   window.clearInterval(timer);
+                   timer = null;
+                }
+                getLatLngByAddress("仙桃");
+                // var latlng = new google.maps.LatLng(30.5931426, 114.30528600000002);
+                // getAddressByLatLng(latlng);
+            });
+
+            function getLatLngByAddress(address){
+                var LatLng=null;
+                geocoder.geocode({'address': address}, function(results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        LatLng = results[0].geometry.location;
+                        console.log(LatLng);
+                    }
+                });
+            }
+
+            function getAddressByLatLng(LatLng){
+                var address=null;
+                geocoder.geocode({'location': LatLng}, function(results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        address = results[0].formatted_address
+                        console.log(address);
+                        map.setCenter(LatLng);
+                        $("#geocode").append("<p>鼠标所在位置：" + address + "</p>");
+                    }
+                });
+            }
+            google.maps.event.addDomListener(window, 'load', initialize);
+        });
+    </script>
+</head>
+<body>
+    <div id="map_canvas"></div>
+    <div id="detail">
+        <div id="control">
+            <b>Start: </b>
+            <input id="start" value="武汉"></input>
+            <b>End: </b>
+            <input id="end" value="仙桃"></input>
+            <button id="query">查询</button>
+            <div id="routes">
+                <p>路线</p>
+                <ul>
+                </ul>
+            </div>
+            <div id="latlng">
+                <p>经度：</p>
+                <p>纬度：</p>
+            </div>
+        </div>
+        <div id="geocode">
+        </div>
+        <button id="undo" style="display:block;margin:auto" onclick="undo()">Undo</button>
+        <div id="directions_panel"></div>
+    </div>
+</body>
+</html>

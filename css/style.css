@@ -1,0 +1,28 @@
+html { height: 100% }
+
+body { height: 100%; margin: 0; padding: 0 }
+
+#latlng{
+	width: 50%;
+	height: 100px;
+	float: left;
+}
+
+#control{
+	width: 50%;
+	height: 100px;
+	background-color: green;
+	float: right;
+}
+
+#control1{
+	width: 100px;
+	height: 100px;
+	float: left;
+}
+
+#map_canvas { 
+	height: 100%;
+	margin: 10, 10, 10, 10;
+	padding: 10,10,10,10;
+}
