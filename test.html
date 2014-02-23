@@ -13,54 +13,94 @@
 
             #d1 {
                 float: left;
-                height: 20%;
-                width: 20%;
-                background-color: red;
-                clear: both;
-            }
-            #d1 div{
-                float: left;
                 height: 100%;
                 width: 20%;
-                background-color: yellow;
-                clear: both;
+                background-color: lightgray;
             }
             #d2 {
-                float: right;
-                height: 20%;
-                width: 20%;
-                background-color: green;
-                clear: both;
-            }
-            #d2 div{
                 float: left;
                 height: 100%;
                 width: 20%;
-                background-color: gray;
+                background-color: green;
             }
             #d3 {
                 float: left;
-                height: 20%;
+                height: 100%;
                 width: 60%;
-                background-color: blue;
-                clear: both;
+                background-color: gray;
+            }
+            a:link {
+                color:#FF0000;
+                text-decoration:none;
+            }     /* 未被访问的链接 */
+            a:visited {color:#00FF00;
+                text-decoration:none;
+            }  /* 已被访问的链接 */
+            a:hover {
+                color:#FF00FF;
+                text-decoration:underline;
+            }    /* 鼠标指针移动到链接上 */
+            a:active {
+                color:#0000FF;
+                text-decoration:underline;
             }
         </style>
         <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
         <script type="text/javascript">
+            $(document).ready(function() {
+                $('#li_a1').click(function(event) {
+                    /* Act on the event */
+                    var a = {
+                        w: 600,
+                        h: 700 
+                    };
+                    var list = [1, 2, 3, 4];
+                    DBrowser.calledByJs();
+                    DBrowser.calledByJs_str('fdfddffdffddf');
+                    DBrowser.calledByJs_int(123);
+                    DBrowser.calledByJs_list(list);
+                    // DBrowser.calledByJs_object(a);
+                });
+
+                $('#li_a2').click(function(event) {
+                    /* Act on the event */
+                    try {
+                        /* This connects sampleQObjects signal to our slot */
+                        DBrowser.sin.connect(slot);
+                        /* This calls a slot which then in turn emits the signal. */
+                        DBrowser.slotThatEmitsSignal();
+                        }
+                        catch(e) {
+                            alert(e);
+                    }
+                });
+
+                function slot(object) {
+                  var objectString = object.sender + 
+                                     " has emited signal " + 
+                                     object.signalsEmited + 
+                                     " times.";
+                  alert(objectString);
+                }
+            });
         </script>
     </head>
     <body>
         <div id="d1">
-            <div>1</div>
-            <div>2</div>
-            <div>3</div>
+            <ul>
+                <li><a id="li_a1" herf="#"> 1</a></li>
+                <li><a id="li_a2" herf="#"> 2</a></li>
+                <li><a id="li_a3" herf="#"> 3</a></li>
+                <li><a id="li_a4" herf="#"> 4</a></li>
+                <li><a id="li_a5" herf="#"> 5</a></li>
+                <li><a id="li_a6" herf="#"> 6</a></li>
+            </ul>
         </div>
         <div id="d2">
-            <div>1</div>
-            <div>2</div>
-            <div>3</div>
+
         </div>
-        <div id="d3"></div>
+        <div id="d3">
+            
+        </div>
     </body>
 </html>
